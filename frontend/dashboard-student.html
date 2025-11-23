@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENSPD LearnAI - Tableau de bord Étudiant</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info">
+                <div>
+                    <h1>🎓 Tableau de bord Étudiant</h1>
+                    <p id="welcomeMessage">Bienvenue</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="window.location.href='chatbot.html'">💬 Chatbot</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='settings.html'">⚙️ Paramètres</button>
+                    <button class="btn btn-danger" onclick="logout()">Déconnexion</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3 id="avgScore">--</h3>
+                <p>Moyenne Générale</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                <h3 id="maxScore">--</h3>
+                <p>Meilleure Note</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                <h3 id="totalGrades">--</h3>
+                <p>Total Notes</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                <h3 id="successProb">--</h3>
+                <p>Probabilité de Réussite</p>
+            </div>
+        </div>
+
+        <!-- Prédictions IA -->
+        <div class="card">
+            <h2 class="card-title">🤖 Analyse IA de vos Performances</h2>
+            <div id="predictionContent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Analyse en cours...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes récentes -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 class="card-title">📊 Vos Notes Récentes</h2>
+                <button class="btn btn-primary" onclick="window.location.href='grades.html'">
+                    Voir toutes mes notes →
+                </button>
+            </div>
+            <div id="gradesTable">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommandations -->
+        <div class="card">
+            <h2 class="card-title">📚 Ressources Recommandées</h2>
+            <button class="btn btn-primary" onclick="window.location.href='recommendations.html'">
+                Voir toutes les recommandations
+            </button>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        // Vérifier l'authentification
+        if (!isAuthenticated()) {
+            window.location.href = 'index.html';
+        }
+
+        const user = getUser();
+        document.getElementById('welcomeMessage').textContent = `Bienvenue, ${user.first_name} ${user.last_name}`;
+
+        // Charger les données
+        async function loadDashboard() {
+            try {
+                // Charger les statistiques
+                const dashboard = await getStudentDashboard();
+                
+                if (dashboard.statistics) {
+                    const stats = dashboard.statistics;
+                    document.getElementById('avgScore').textContent = stats.avg_score ? parseFloat(stats.avg_score).toFixed(2) : '--';
+                    document.getElementById('maxScore').textContent = stats.max_score ? parseFloat(stats.max_score).toFixed(2) : '--';
+                    document.getElementById('totalGrades').textContent = stats.total_grades || '0';
+                }
+
+                // Afficher les notes
+                if (dashboard.grades && dashboard.grades.length > 0) {
+                    displayGrades(dashboard.grades);
+                } else {
+                    document.getElementById('gradesTable').innerHTML = '<p>Aucune note disponible</p>';
+                }
+
+                // Charger les prédictions
+                loadPredictions();
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function loadPredictions() {
+            try {
+                const predictions = await getPredictions();
+                
+                if (predictions && predictions.success_probability !== undefined) {
+                    const prob = (parseFloat(predictions.success_probability) * 100).toFixed(0);
+                    document.getElementById('successProb').textContent = `${prob}%`;
+                    
+                    // Utiliser le message personnalisé du backend
+                    if (predictions.performance_message && predictions.average_score) {
+                        const msg = predictions.performance_message;
+                        const avg = predictions.average_score;
+                        
+                        let alertClass = 'alert-info';
+                        if (msg.level === 'excellent' || msg.level === 'very_good' || msg.level === 'good') {
+                            alertClass = 'alert-success';
+                        } else if (msg.level === 'average' || msg.level === 'warning') {
+                            alertClass = 'alert-warning';
+                        } else if (msg.level === 'concerning' || msg.level === 'critical') {
+                            alertClass = 'alert-danger';
+                        }
+                        
+                        const riskHTML = `
+                            <div class="alert ${alertClass}">
+                                ${msg.emoji} <strong>${msg.title} - Moyenne: ${avg}/20</strong><br>
+                                ${msg.message}<br>
+                                <em>💡 Conseil: ${msg.advice}</em>
+                            </div>
+                        `;
+                        
+                        document.getElementById('predictionContent').innerHTML = riskHTML;
+                    } else {
+                        // Fallback si pas de message du backend
+                        const avgScore = parseFloat(document.getElementById('avgScore').textContent) || 0;
+                        const riskHTML = getPerformanceMessage(avgScore);
+                        document.getElementById('predictionContent').innerHTML = riskHTML;
+                    }
+                } else {
+                    document.getElementById('successProb').textContent = 'N/A';
+                    document.getElementById('predictionContent').innerHTML = '<p>📊 Pas assez de données pour une prédiction IA. Continuez à obtenir des notes !</p>';
+                }
+            } catch (error) {
+                console.error('Erreur prédictions:', error);
+                document.getElementById('successProb').textContent = 'N/A';
+                document.getElementById('predictionContent').innerHTML = '<p>⚠️ Service de prédiction temporairement indisponible</p>';
+            }
+        }
+
+        function getPerformanceMessage(avg) {
+            // Messages de fallback si le backend ne répond pas
+            if (avg >= 18) {
+                return '<div class="alert alert-success">🏆 <strong>Excellence académique - Moyenne: ' + avg.toFixed(2) + '/20</strong><br>Performances exceptionnelles ! Vous êtes parmi les meilleurs. Continuez à viser l\'excellence et inspirez vos camarades.</div>';
+            } else if (avg >= 16) {
+                return '<div class="alert alert-success">⭐ <strong>Très bonnes performances - Moyenne: ' + avg.toFixed(2) + '/20</strong><br>Excellent travail ! Vous maîtrisez bien vos matières. Maintenez cette dynamique pour atteindre l\'excellence.</div>';
+            } else if (avg >= 14) {
+                return '<div class="alert alert-success">✅ <strong>Bonnes performances - Moyenne: ' + avg.toFixed(2) + '/20</strong><br>Vous êtes sur la bonne voie ! Continuez vos efforts et visez encore plus haut. La réussite est assurée.</div>';
+            } else if (avg >= 12) {
+                return '<div class="alert alert-info">👍 <strong>Performances satisfaisantes - Moyenne: ' + avg.toFixed(2) + '/20</strong><br>Vous êtes dans la moyenne supérieure. Avec plus de travail régulier, vous pouvez atteindre de très bons résultats.</div>';
+            } else if (avg >= 10) {
+                return '<div class="alert alert-warning">⚡ <strong>Performances moyennes - Moyenne: ' + avg.toFixed(2) + '/20</strong><br>Vous validez vos matières mais pouvez faire mieux. Identifiez vos points faibles et travaillez-les régulièrement.</div>';
+            } else if (avg >= 9) {
+                return '<div class="alert alert-warning">⚠️ <strong>Attention requise - Moyenne: ' + avg.toFixed(2) + '/20</strong><br>Vous êtes juste en dessous de la moyenne. Redoublez d\'efforts, consultez vos enseignants et utilisez le chatbot pour des conseils.</div>';
+            } else if (avg >= 8) {
+                return '<div class="alert alert-danger">🚨 <strong>Situation préoccupante - Moyenne: ' + avg.toFixed(2) + '/20</strong><br>Vos résultats sont faibles. Il est urgent de réagir : assistez aux cours de soutien, travaillez régulièrement et demandez de l\'aide.</div>';
+            } else {
+                return '<div class="alert alert-danger">❌ <strong>Risque d\'échec élevé - Moyenne: ' + avg.toFixed(2) + '/20</strong><br>Situation critique ! Consultez immédiatement vos enseignants, suivez un plan de rattrapage et utilisez toutes les ressources disponibles.</div>';
+            }
+        }
+
+        function displayGrades(grades) {
+            const html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Matière</th>
+                            <th>Type</th>
+                            <th>Note</th>
+                            <th>Semestre</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${grades.slice(0, 10).map(g => `
+                            <tr>
+                                <td>${g.subject_name}</td>
+                                <td>${g.grade_type}</td>
+                                <td><strong>${g.score}/20</strong></td>
+                                <td>${g.semester}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('gradesTable').innerHTML = html;
+        }
+
+        // Charger au démarrage
+        loadDashboard();
+    </script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres - ENSPD LearnAI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 15px 0;
+            margin-bottom: 30px;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-brand h2 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .nav-menu a {
+            text-decoration: none;
+            color: #4b5563;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            color: var(--primary-color);
+        }
+        
+        .settings-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .settings-header {
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .settings-header h1 {
+            margin: 0 0 10px 0;
+        }
+        
+        .settings-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        
+        .settings-tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: white;
+            border-bottom-color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .settings-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 20px;
+        }
+        
+        .settings-section h3 {
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .profile-avatar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .avatar-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 0 auto 15px;
+        }
+        
+        .danger-zone {
+            border: 2px solid #ef4444;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .danger-zone h4 {
+            color: #ef4444;
+            margin-bottom: 10px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-menu {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>🎓 ENSPD LearnAI</h2>
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <!-- Menu dynamique selon le rôle -->
+            </ul>
+        </div>
+    </nav>
+
+    <div class="settings-container">
+        <div class="settings-header">
+            <h1>⚙️ Paramètres</h1>
+            <p>Gérez votre profil et vos préférences</p>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="settings-tabs">
+            <button class="tab-btn active" onclick="switchTab('profile')">👤 Profil</button>
+            <button class="tab-btn" onclick="switchTab('security')">🔒 Sécurité</button>
+            <button class="tab-btn" onclick="switchTab('preferences')">🎨 Préférences</button>
+        </div>
+
+        <!-- Onglet Profil -->
+        <div id="profile-tab" class="tab-content active">
+            <div class="settings-section">
+                <div class="profile-avatar">
+                    <div class="avatar-circle" id="avatar-display">
+                        <span id="avatar-initials">JD</span>
+                    </div>
+                    <p id="user-role-display" style="color: #6b7280; font-size: 14px;">Étudiant</p>
+                </div>
+
+                <h3>Informations personnelles</h3>
+                <form id="profileForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">Prénom</label>
+                            <input type="text" id="firstName" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Nom</label>
+                            <input type="text" id="lastName" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" class="form-control" required>
+                    </div>
+
+                    <div id="student-fields" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="studentId">Matricule</label>
+                                <input type="text" id="studentId" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="department">Département</label>
+                                <input type="text" id="department" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="level">Niveau</label>
+                                <select id="level" class="form-control">
+                                    <option value="">Sélectionner...</option>
+                                    <option value="L1">Licence 1</option>
+                                    <option value="L2">Licence 2</option>
+                                    <option value="L3">Licence 3</option>
+                                    <option value="M1">Master 1</option>
+                                    <option value="M2">Master 2</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="academicYear">Année académique</label>
+                                <input type="text" id="academicYear" class="form-control" placeholder="2024-2025">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary">💾 Enregistrer les modifications</button>
+                        <button type="button" class="btn btn-secondary" onclick="loadUserProfile()">↺ Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Onglet Sécurité -->
+        <div id="security-tab" class="tab-content">
+            <div class="settings-section">
+                <h3>Changer le mot de passe</h3>
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Mot de passe actuel</label>
+                        <input type="password" id="currentPassword" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newPassword">Nouveau mot de passe</label>
+                        <input type="password" id="newPassword" class="form-control" required minlength="6">
+                        <small style="color: #6b7280;">Minimum 6 caractères</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirmer le nouveau mot de passe</label>
+                        <input type="password" id="confirmPassword" class="form-control" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">🔒 Changer le mot de passe</button>
+                </form>
+            </div>
+
+            <div class="settings-section danger-zone">
+                <h4>⚠️ Zone dangereuse</h4>
+                <p style="color: #6b7280; margin-bottom: 15px;">
+                    La suppression de votre compte est irréversible. Toutes vos données seront perdues.
+                </p>
+                <button class="btn" style="background: #ef4444;" onclick="confirmDeleteAccount()">
+                    🗑️ Supprimer mon compte
+                </button>
+            </div>
+        </div>
+
+        <!-- Onglet Préférences -->
+        <div id="preferences-tab" class="tab-content">
+            <div class="settings-section">
+                <h3>Préférences d'affichage</h3>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="darkMode"> Mode sombre
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="language">Langue</label>
+                    <select id="language" class="form-control">
+                        <option value="fr">Français</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <h3 style="margin-top: 30px;">Notifications</h3>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="emailNotifications" checked> Recevoir des notifications par email
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="gradeAlerts" checked> Alertes pour les nouvelles notes
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="recommendationAlerts" checked> Alertes pour les nouvelles recommandations
+                    </label>
+                </div>
+
+                <button class="btn btn-primary" onclick="savePreferences()">💾 Enregistrer les préférences</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+</html>

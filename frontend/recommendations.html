@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENSPD LearnAI - Recommandations</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .resource-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #2563eb;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .resource-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .resource-card h3 {
+            margin: 10px 0;
+            color: #1f2937;
+            font-size: 18px;
+        }
+        .resource-card p {
+            margin: 8px 0;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+        .resource-card .btn {
+            margin-top: 15px;
+            display: inline-block;
+        }
+        .resource-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        .type-pdf { background: #dbeafe; color: #1e40af; }
+        .type-video { background: #fce7f3; color: #9f1239; }
+        .type-exercise { background: #d1fae5; color: #065f46; }
+        .type-article { background: #fef3c7; color: #92400e; }
+        
+        .resource-info {
+            margin: 12px 0;
+            padding: 10px 0;
+            border-top: 1px solid #e5e7eb;
+        }
+        .resource-info strong {
+            color: #374151;
+        }
+        
+        /* Pagination */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .pagination-info {
+            color: #666;
+            font-size: 14px;
+        }
+        .pagination-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .pagination-controls button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .pagination-controls button:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination-controls .page-number {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            min-width: 40px;
+            text-align: center;
+        }
+        .pagination-controls .page-number.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            font-weight: bold;
+        }
+        .pagination-controls .page-number:hover:not(.active) {
+            background: #f0f0f0;
+        }
+        .per-page-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .per-page-selector select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .stats-summary {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stats-summary h3 {
+            margin: 0;
+            color: #667eea;
+            font-size: 24px;
+        }
+        .stats-summary p {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info">
+                <div>
+                    <h1>📚 Ressources Recommandées</h1>
+                    <p>Ressources personnalisées pour améliorer vos performances</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="window.location.href='dashboard-student.html'">← Retour</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="stats-summary" id="statsSummary" style="display: none;">
+            <div>
+                <h3 id="totalRecommendations">0</h3>
+                <p>Ressources recommandées</p>
+            </div>
+            <div>
+                <p id="weakSubjectsInfo">Basé sur vos performances</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">🎯 Recommandations IA</h2>
+            <div id="recommendationsContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Chargement des recommandations...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination-container" id="paginationContainer" style="display: none;">
+            <div class="per-page-selector">
+                <label>Afficher:</label>
+                <select id="perPageSelect" onchange="changePerPage()">
+                    <option value="5">5 ressources</option>
+                    <option value="10" selected>10 ressources</option>
+                    <option value="20">20 ressources</option>
+                    <option value="all">Toutes</option>
+                </select>
+            </div>
+            
+            <div class="pagination-info" id="paginationInfo">
+                Affichage de 1-10 sur 50 ressources
+            </div>
+            
+            <div class="pagination-controls">
+                <button onclick="goToPage(1)" id="firstPageBtn">« Première</button>
+                <button onclick="previousPage()" id="prevPageBtn">‹ Précédent</button>
+                <div id="pageNumbers"></div>
+                <button onclick="nextPage()" id="nextPageBtn">Suivant ›</button>
+                <button onclick="goToPage(totalPages)" id="lastPageBtn">Dernière »</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        // Vérifier l'authentification
+        if (!isAuthenticated()) {
+            window.location.href = 'index.html';
+        }
+
+        let allRecommendations = [];
+        let currentPage = 1;
+        let perPage = 10;
+        let totalPages = 1;
+
+        async function loadRecommendations() {
+            try {
+                const data = await getRecommendations();
+                
+                if (data.recommendations && data.recommendations.length > 0) {
+                    allRecommendations = data.recommendations;
+                    
+                    // Afficher les statistiques
+                    document.getElementById('statsSummary').style.display = 'flex';
+                    document.getElementById('totalRecommendations').textContent = allRecommendations.length;
+                    
+                    // Compter les matières faibles
+                    const weakSubjects = [...new Set(allRecommendations
+                        .filter(r => r.subject_name)
+                        .map(r => r.subject_name))];
+                    
+                    if (weakSubjects.length > 0) {
+                        document.getElementById('weakSubjectsInfo').textContent = 
+                            `${weakSubjects.length} matière(s) à améliorer`;
+                    }
+                    
+                    displayRecommendations();
+                } else {
+                    document.getElementById('recommendationsContainer').innerHTML = 
+                        '<p>🎉 Excellent ! Vous n\'avez pas de matières faibles. Continuez ainsi !</p>';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                document.getElementById('recommendationsContainer').innerHTML = 
+                    '<p>Erreur de chargement des recommandations.</p>';
+            }
+        }
+
+        function displayRecommendations() {
+            if (allRecommendations.length === 0) {
+                document.getElementById('recommendationsContainer').innerHTML = 
+                    '<p>🎉 Excellent ! Vous n\'avez pas de matières faibles. Continuez ainsi !</p>';
+                document.getElementById('paginationContainer').style.display = 'none';
+                return;
+            }
+
+            // Calculer la pagination
+            const totalRecs = allRecommendations.length;
+            
+            if (perPage === 'all') {
+                totalPages = 1;
+                currentPage = 1;
+            } else {
+                totalPages = Math.ceil(totalRecs / perPage);
+                if (currentPage > totalPages) currentPage = totalPages;
+            }
+
+            // Obtenir les recommandations pour la page actuelle
+            let recsToDisplay;
+            if (perPage === 'all') {
+                recsToDisplay = allRecommendations;
+            } else {
+                const startIndex = (currentPage - 1) * perPage;
+                const endIndex = startIndex + perPage;
+                recsToDisplay = allRecommendations.slice(startIndex, endIndex);
+            }
+
+            // Afficher les recommandations
+            const html = recsToDisplay.map(rec => {
+                const difficultyLabel = getDifficultyLabel(rec.difficulty_level);
+                const reasonBadge = rec.recommendation_reason ? 
+                    `<div style="background: #fef3c7; color: #92400e; padding: 8px 12px; border-radius: 6px; margin: 10px 0; font-size: 13px;">
+                        💡 <strong>Pourquoi cette ressource ?</strong><br>${rec.recommendation_reason}
+                    </div>` : '';
+                
+                return `
+                    <div class="resource-card">
+                        <span class="resource-type type-${rec.resource_type}">${getTypeLabel(rec.resource_type)}</span>
+                        <h3>${rec.title}</h3>
+                        <p>${rec.description || 'Aucune description disponible'}</p>
+                        ${reasonBadge}
+                        <div class="resource-info">
+                            <p><strong>Matière:</strong> ${rec.subject_name || 'Général'}</p>
+                            ${rec.difficulty_level ? `<p><strong>Niveau:</strong> ${difficultyLabel}</p>` : ''}
+                            ${rec.subject_avg_score ? `<p><strong>Votre moyenne:</strong> ${parseFloat(rec.subject_avg_score).toFixed(2)}/20</p>` : ''}
+                        </div>
+                        ${rec.url ? `<a href="${rec.url}" target="_blank" class="btn btn-primary">Accéder à la ressource →</a>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('recommendationsContainer').innerHTML = html;
+
+            // Afficher la pagination si nécessaire
+            if (totalRecs > 5) {
+                document.getElementById('paginationContainer').style.display = 'flex';
+                updatePaginationControls();
+            } else {
+                document.getElementById('paginationContainer').style.display = 'none';
+            }
+        }
+
+        function updatePaginationControls() {
+            const totalRecs = allRecommendations.length;
+            
+            // Mettre à jour l'info
+            if (perPage === 'all') {
+                document.getElementById('paginationInfo').textContent = 
+                    `Affichage de toutes les ${totalRecs} ressources`;
+            } else {
+                const startIndex = (currentPage - 1) * perPage + 1;
+                const endIndex = Math.min(currentPage * perPage, totalRecs);
+                document.getElementById('paginationInfo').textContent = 
+                    `Affichage de ${startIndex}-${endIndex} sur ${totalRecs} ressources`;
+            }
+
+            // Désactiver/activer les boutons
+            document.getElementById('firstPageBtn').disabled = currentPage === 1 || perPage === 'all';
+            document.getElementById('prevPageBtn').disabled = currentPage === 1 || perPage === 'all';
+            document.getElementById('nextPageBtn').disabled = currentPage === totalPages || perPage === 'all';
+            document.getElementById('lastPageBtn').disabled = currentPage === totalPages || perPage === 'all';
+
+            // Générer les numéros de page
+            if (perPage !== 'all') {
+                generatePageNumbers();
+            } else {
+                document.getElementById('pageNumbers').innerHTML = '';
+            }
+        }
+
+        function generatePageNumbers() {
+            const pageNumbersDiv = document.getElementById('pageNumbers');
+            let html = '';
+
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            if (currentPage <= 3) {
+                endPage = Math.min(5, totalPages);
+            }
+            if (currentPage >= totalPages - 2) {
+                startPage = Math.max(1, totalPages - 4);
+            }
+
+            if (startPage > 1) {
+                html += '<span class="page-number" onclick="goToPage(1)">1</span>';
+                if (startPage > 2) {
+                    html += '<span style="padding: 0 5px;">...</span>';
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'active' : '';
+                html += `<span class="page-number ${activeClass}" onclick="goToPage(${i})">${i}</span>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += '<span style="padding: 0 5px;">...</span>';
+                }
+                html += `<span class="page-number" onclick="goToPage(${totalPages})">${totalPages}</span>`;
+            }
+
+            pageNumbersDiv.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            displayRecommendations();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayRecommendations();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayRecommendations();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function changePerPage() {
+            const select = document.getElementById('perPageSelect');
+            perPage = select.value === 'all' ? 'all' : parseInt(select.value);
+            currentPage = 1;
+            displayRecommendations();
+        }
+
+        function getDifficultyLabel(level) {
+            const labels = {
+                'beginner': '🟢 Débutant',
+                'intermediate': '🟡 Intermédiaire',
+                'advanced': '🔴 Avancé'
+            };
+            return labels[level] || level;
+        }
+
+        function getTypeLabel(type) {
+            const labels = {
+                'pdf': '📄 PDF',
+                'video': '🎥 Vidéo',
+                'exercise': '✏️ Exercice',
+                'article': '📰 Article'
+            };
+            return labels[type] || type;
+        }
+
+        // Charger au démarrage
+        loadRecommendations();
+    </script>
+</body>
+</html>

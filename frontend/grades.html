@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENSPD LearnAI - Mes Notes</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-group select, .filter-group input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .grade-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .summary-card h3 {
+            font-size: 32px;
+            margin: 0;
+        }
+        .summary-card p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .grades-table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table thead {
+            background: #667eea;
+            color: white;
+        }
+        .table th, .table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .score-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .score-excellent { background: #10b981; color: white; }
+        .score-good { background: #3b82f6; color: white; }
+        .score-average { background: #f59e0b; color: white; }
+        .score-poor { background: #ef4444; color: white; }
+        
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: white;
+            border-radius: 0 0 10px 10px;
+            margin-top: -1px;
+        }
+        .pagination-info {
+            color: #666;
+            font-size: 14px;
+        }
+        .pagination-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .pagination-controls button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .pagination-controls button:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pagination-controls .page-number {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            min-width: 40px;
+            text-align: center;
+        }
+        .pagination-controls .page-number.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            font-weight: bold;
+        }
+        .pagination-controls .page-number:hover:not(.active) {
+            background: #f0f0f0;
+        }
+        .per-page-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .per-page-selector select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info">
+                <div>
+                    <h1>📚 Toutes mes Notes</h1>
+                    <p id="welcomeMessage">Bienvenue</p>
+                </div>
+                <div>
+                    <button class="btn btn-secondary" onclick="window.location.href='dashboard-student.html'">← Retour</button>
+                    <button class="btn btn-danger" onclick="logout()">Déconnexion</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Résumé des notes -->
+        <div class="grade-summary" id="gradeSummary">
+            <div class="summary-card">
+                <h3 id="totalGrades">--</h3>
+                <p>Total Notes</p>
+            </div>
+            <div class="summary-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                <h3 id="avgScore">--</h3>
+                <p>Moyenne Générale</p>
+            </div>
+            <div class="summary-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                <h3 id="maxScore">--</h3>
+                <p>Meilleure Note</p>
+            </div>
+            <div class="summary-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                <h3 id="minScore">--</h3>
+                <p>Note la plus basse</p>
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="filter-section">
+            <h3>🔍 Filtrer les notes</h3>
+            <div class="filter-group">
+                <select id="filterSemester" onchange="applyFilters()">
+                    <option value="">Tous les semestres</option>
+                    <option value="S1">Semestre 1</option>
+                    <option value="S2">Semestre 2</option>
+                </select>
+                <select id="filterType" onchange="applyFilters()">
+                    <option value="">Tous les types</option>
+                    <option value="Examen">Examen</option>
+                    <option value="Devoir">Devoir</option>
+                    <option value="Quiz">Quiz</option>
+                    <option value="Contrôle">Contrôle</option>
+                    <option value="TP">TP</option>
+                </select>
+                <select id="filterSubject" onchange="applyFilters()">
+                    <option value="">Toutes les matières</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Rechercher..." onkeyup="applyFilters()">
+            </div>
+        </div>
+
+        <!-- Tableau des notes -->
+        <div class="grades-table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Matière</th>
+                        <th>Type</th>
+                        <th>Note</th>
+                        <th>Semestre</th>
+                    </tr>
+                </thead>
+                <tbody id="gradesTableBody">
+                    <tr>
+                        <td colspan="5" style="text-align: center;">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <p>Chargement des notes...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination-container" id="paginationContainer" style="display: none;">
+            <div class="per-page-selector">
+                <label>Afficher:</label>
+                <select id="perPageSelect" onchange="changePerPage()">
+                    <option value="10">10 notes</option>
+                    <option value="20" selected>20 notes</option>
+                    <option value="50">50 notes</option>
+                    <option value="100">100 notes</option>
+                    <option value="all">Toutes</option>
+                </select>
+            </div>
+            
+            <div class="pagination-info" id="paginationInfo">
+                Affichage de 1-20 sur 100 notes
+            </div>
+            
+            <div class="pagination-controls" id="paginationControls">
+                <button onclick="goToPage(1)" id="firstPageBtn">« Première</button>
+                <button onclick="previousPage()" id="prevPageBtn">‹ Précédent</button>
+                <div id="pageNumbers"></div>
+                <button onclick="nextPage()" id="nextPageBtn">Suivant ›</button>
+                <button onclick="goToPage(totalPages)" id="lastPageBtn">Dernière »</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        // Vérifier l'authentification
+        if (!isAuthenticated()) {
+            window.location.href = 'index.html';
+        }
+
+        const user = getUser();
+        document.getElementById('welcomeMessage').textContent = `${user.first_name} ${user.last_name}`;
+
+        let allGrades = [];
+        let filteredGrades = [];
+        let currentPage = 1;
+        let perPage = 20;
+        let totalPages = 1;
+
+        // Charger toutes les notes
+        async function loadAllGrades() {
+            try {
+                const dashboard = await getStudentDashboard();
+                
+                if (dashboard.grades && dashboard.grades.length > 0) {
+                    allGrades = dashboard.grades;
+                    filteredGrades = [...allGrades];
+                    
+                    // Calculer les statistiques
+                    updateStatistics();
+                    
+                    // Remplir le filtre des matières
+                    populateSubjectFilter();
+                    
+                    // Afficher les notes
+                    displayGrades();
+                } else {
+                    document.getElementById('gradesTableBody').innerHTML = 
+                        '<tr><td colspan="5" style="text-align: center;">Aucune note disponible</td></tr>';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                document.getElementById('gradesTableBody').innerHTML = 
+                    '<tr><td colspan="5" style="text-align: center; color: red;">Erreur lors du chargement des notes</td></tr>';
+            }
+        }
+
+        function updateStatistics() {
+            const scores = allGrades.map(g => parseFloat(g.score));
+            const total = allGrades.length;
+            const avg = scores.reduce((a, b) => a + b, 0) / total;
+            const max = Math.max(...scores);
+            const min = Math.min(...scores);
+
+            document.getElementById('totalGrades').textContent = total;
+            document.getElementById('avgScore').textContent = avg.toFixed(2);
+            document.getElementById('maxScore').textContent = max.toFixed(2);
+            document.getElementById('minScore').textContent = min.toFixed(2);
+        }
+
+        function populateSubjectFilter() {
+            const subjects = [...new Set(allGrades.map(g => g.subject_name))].sort();
+            const select = document.getElementById('filterSubject');
+            
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                select.appendChild(option);
+            });
+        }
+
+        function getScoreClass(score) {
+            const s = parseFloat(score);
+            if (s >= 16) return 'score-excellent';
+            if (s >= 12) return 'score-good';
+            if (s >= 10) return 'score-average';
+            return 'score-poor';
+        }
+
+        function displayGrades() {
+            if (filteredGrades.length === 0) {
+                document.getElementById('gradesTableBody').innerHTML = 
+                    '<tr><td colspan="5" style="text-align: center;">Aucune note ne correspond aux filtres</td></tr>';
+                document.getElementById('paginationContainer').style.display = 'none';
+                return;
+            }
+
+            // Calculer la pagination
+            const totalGrades = filteredGrades.length;
+            
+            if (perPage === 'all') {
+                totalPages = 1;
+                currentPage = 1;
+            } else {
+                totalPages = Math.ceil(totalGrades / perPage);
+                if (currentPage > totalPages) currentPage = totalPages;
+            }
+
+            // Obtenir les notes pour la page actuelle
+            let gradesToDisplay;
+            if (perPage === 'all') {
+                gradesToDisplay = filteredGrades;
+            } else {
+                const startIndex = (currentPage - 1) * perPage;
+                const endIndex = startIndex + perPage;
+                gradesToDisplay = filteredGrades.slice(startIndex, endIndex);
+            }
+
+            // Afficher les notes
+            const html = gradesToDisplay.map(g => {
+                const date = new Date(g.created_at).toLocaleDateString('fr-FR');
+                const scoreClass = getScoreClass(g.score);
+                
+                return `
+                    <tr>
+                        <td>${date}</td>
+                        <td><strong>${g.subject_name}</strong></td>
+                        <td>${g.grade_type}</td>
+                        <td><span class="score-badge ${scoreClass}">${parseFloat(g.score).toFixed(2)}/20</span></td>
+                        <td>${g.semester}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('gradesTableBody').innerHTML = html;
+
+            // Afficher la pagination si nécessaire
+            if (totalGrades > 10) {
+                document.getElementById('paginationContainer').style.display = 'flex';
+                updatePaginationControls();
+            } else {
+                document.getElementById('paginationContainer').style.display = 'none';
+            }
+        }
+
+        function updatePaginationControls() {
+            const totalGrades = filteredGrades.length;
+            
+            // Mettre à jour l'info
+            if (perPage === 'all') {
+                document.getElementById('paginationInfo').textContent = 
+                    `Affichage de toutes les ${totalGrades} notes`;
+            } else {
+                const startIndex = (currentPage - 1) * perPage + 1;
+                const endIndex = Math.min(currentPage * perPage, totalGrades);
+                document.getElementById('paginationInfo').textContent = 
+                    `Affichage de ${startIndex}-${endIndex} sur ${totalGrades} notes`;
+            }
+
+            // Désactiver/activer les boutons
+            document.getElementById('firstPageBtn').disabled = currentPage === 1 || perPage === 'all';
+            document.getElementById('prevPageBtn').disabled = currentPage === 1 || perPage === 'all';
+            document.getElementById('nextPageBtn').disabled = currentPage === totalPages || perPage === 'all';
+            document.getElementById('lastPageBtn').disabled = currentPage === totalPages || perPage === 'all';
+
+            // Générer les numéros de page
+            if (perPage !== 'all') {
+                generatePageNumbers();
+            } else {
+                document.getElementById('pageNumbers').innerHTML = '';
+            }
+        }
+
+        function generatePageNumbers() {
+            const pageNumbersDiv = document.getElementById('pageNumbers');
+            let html = '';
+
+            // Logique pour afficher les numéros de page
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            // Ajuster si on est au début ou à la fin
+            if (currentPage <= 3) {
+                endPage = Math.min(5, totalPages);
+            }
+            if (currentPage >= totalPages - 2) {
+                startPage = Math.max(1, totalPages - 4);
+            }
+
+            // Première page si nécessaire
+            if (startPage > 1) {
+                html += '<span class="page-number" onclick="goToPage(1)">1</span>';
+                if (startPage > 2) {
+                    html += '<span style="padding: 0 5px;">...</span>';
+                }
+            }
+
+            // Pages du milieu
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'active' : '';
+                html += `<span class="page-number ${activeClass}" onclick="goToPage(${i})">${i}</span>`;
+            }
+
+            // Dernière page si nécessaire
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += '<span style="padding: 0 5px;">...</span>';
+                }
+                html += `<span class="page-number" onclick="goToPage(${totalPages})">${totalPages}</span>`;
+            }
+
+            pageNumbersDiv.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            displayGrades();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayGrades();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayGrades();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function changePerPage() {
+            const select = document.getElementById('perPageSelect');
+            perPage = select.value === 'all' ? 'all' : parseInt(select.value);
+            currentPage = 1;
+            displayGrades();
+        }
+
+        function applyFilters() {
+            const semester = document.getElementById('filterSemester').value;
+            const type = document.getElementById('filterType').value;
+            const subject = document.getElementById('filterSubject').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredGrades = allGrades.filter(g => {
+                const matchSemester = !semester || g.semester === semester;
+                const matchType = !type || g.grade_type === type;
+                const matchSubject = !subject || g.subject_name === subject;
+                const matchSearch = !search || 
+                    g.subject_name.toLowerCase().includes(search) ||
+                    g.grade_type.toLowerCase().includes(search);
+
+                return matchSemester && matchType && matchSubject && matchSearch;
+            });
+
+            currentPage = 1; // Réinitialiser à la première page lors du filtrage
+            displayGrades();
+        }
+
+        // Charger au démarrage
+        loadAllGrades();
+    </script>
+</body>
+</html>

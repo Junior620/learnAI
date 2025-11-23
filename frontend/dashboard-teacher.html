@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENSPD LearnAI - Tableau de bord Enseignant</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info">
+                <div>
+                    <h1>👨‍🏫 Tableau de bord Enseignant</h1>
+                    <p id="welcomeMessage">Bienvenue</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="window.location.href='add-grade.html'">➕ Ajouter une Note</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='settings.html'">⚙️ Paramètres</button>
+                    <button class="btn btn-danger" onclick="logout()">Déconnexion</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3 id="totalStudents">--</h3>
+                <p>Total Étudiants</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                <h3 id="classAverage">--</h3>
+                <p>Moyenne de Classe</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                <h3 id="totalGrades">--</h3>
+                <p>Total Notes</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                <h3 id="strugglingCount">--</h3>
+                <p>Étudiants en Difficulté</p>
+            </div>
+        </div>
+
+        <!-- Liste des étudiants avec filtre -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="card-title" style="margin: 0;">👥 Liste des Étudiants</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <label style="margin: 0;">Filtre:</label>
+                    <select id="studentFilter" onchange="filterStudents()" class="form-control" style="width: auto;">
+                        <option value="all">Tous les étudiants</option>
+                        <option value="struggling">En difficulté (< 10)</option>
+                        <option value="average">Moyenne (10-14)</option>
+                        <option value="good">Bons (≥ 14)</option>
+                    </select>
+                </div>
+            </div>
+            <div id="studentsList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            <div id="studentsPagination" style="margin-top: 20px; text-align: center;"></div>
+        </div>
+    </div>
+
+    <!-- Modal Détails Étudiant -->
+    <div id="studentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="modalTitle">📊 Détails de l'étudiant</h2>
+                <button onclick="closeStudentModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div id="modalContent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Chargement...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        // Vérifier l'authentification
+        if (!isAuthenticated()) {
+            window.location.href = 'index.html';
+        }
+
+        const user = getUser();
+        document.getElementById('welcomeMessage').textContent = `Bienvenue, ${user.first_name} ${user.last_name}`;
+
+        // Variables globales pour la pagination
+        let allStudentsData = [];
+        let filteredStudentsData = [];
+        let currentPage = 1;
+        const studentsPerPage = 10;
+
+        // Charger les données
+        async function loadDashboard() {
+            try {
+                // Charger les statistiques
+                const dashboard = await getTeacherDashboard();
+                
+                if (dashboard.statistics) {
+                    const stats = dashboard.statistics;
+                    document.getElementById('totalStudents').textContent = stats.total_students || '0';
+                    
+                    const classAvg = parseFloat(stats.class_average);
+                    document.getElementById('classAverage').textContent = !isNaN(classAvg) ? classAvg.toFixed(2) : '--';
+                    
+                    document.getElementById('totalGrades').textContent = stats.total_grades || '0';
+                }
+
+                // Compter les étudiants en difficulté
+                if (dashboard.struggling_students && dashboard.struggling_students.length > 0) {
+                    document.getElementById('strugglingCount').textContent = dashboard.struggling_students.length;
+                }
+
+                // Charger la liste complète
+                loadStudents();
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function loadStudents() {
+            try {
+                const response = await authenticatedFetch('http://localhost:5000/api/teacher/students');
+                const data = await response.json();
+                
+                if (response.ok && data.students) {
+                    allStudentsData = data.students;
+                    filterStudents();
+                } else {
+                    document.getElementById('studentsList').innerHTML = '<p>Erreur de chargement</p>';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                document.getElementById('studentsList').innerHTML = '<p>Erreur de chargement</p>';
+            }
+        }
+        
+        function filterStudents() {
+            const filter = document.getElementById('studentFilter').value;
+            let filtered = [...allStudentsData];
+            
+            if (filter === 'struggling') {
+                filtered = filtered.filter(s => parseFloat(s.avg_score) < 10);
+            } else if (filter === 'average') {
+                filtered = filtered.filter(s => {
+                    const avg = parseFloat(s.avg_score);
+                    return avg >= 10 && avg < 14;
+                });
+            } else if (filter === 'good') {
+                filtered = filtered.filter(s => parseFloat(s.avg_score) >= 14);
+            }
+            
+            filteredStudentsData = filtered;
+            currentPage = 1;
+            displayStudentsWithPagination();
+        }
+        
+        function displayStudentsWithPagination() {
+            const totalPages = Math.ceil(filteredStudentsData.length / studentsPerPage);
+            const startIndex = (currentPage - 1) * studentsPerPage;
+            const endIndex = startIndex + studentsPerPage;
+            const currentStudents = filteredStudentsData.slice(startIndex, endIndex);
+            
+            displayStudents(currentStudents);
+            displayPagination(totalPages);
+        }
+        
+        function displayPagination(totalPages) {
+            if (totalPages <= 1) {
+                document.getElementById('studentsPagination').innerHTML = '';
+                return;
+            }
+            
+            let html = '<div style="display: flex; gap: 5px; justify-content: center; align-items: center; flex-wrap: wrap;">';
+            
+            if (currentPage > 1) {
+                html += `<button class="btn btn-secondary" onclick="goToPage(${currentPage - 1})">← Précédent</button>`;
+            }
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === currentPage) {
+                    html += `<button class="btn btn-primary" style="min-width: 40px;">${i}</button>`;
+                } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="btn btn-secondary" style="min-width: 40px;" onclick="goToPage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<span>...</span>';
+                }
+            }
+            
+            if (currentPage < totalPages) {
+                html += `<button class="btn btn-secondary" onclick="goToPage(${currentPage + 1})">Suivant →</button>`;
+            }
+            
+            html += '</div>';
+            html += `<p style="margin-top: 10px; color: #6b7280;">Page ${currentPage} sur ${totalPages} (${filteredStudentsData.length} étudiants)</p>`;
+            
+            document.getElementById('studentsPagination').innerHTML = html;
+        }
+        
+        function goToPage(page) {
+            currentPage = page;
+            displayStudentsWithPagination();
+        }
+
+        function displayStrugglingStudents(students) {
+            const html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Matricule</th>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Moyenne</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${students.map(s => {
+                            const avgScore = parseFloat(s.avg_score);
+                            const scoreDisplay = !isNaN(avgScore) ? avgScore.toFixed(2) : 'N/A';
+                            return `
+                            <tr>
+                                <td>${s.student_id || 'N/A'}</td>
+                                <td>${s.last_name}</td>
+                                <td>${s.first_name}</td>
+                                <td><strong style="color: #ef4444;">${scoreDisplay}</strong></td>
+                                <td>
+                                    <button class="btn btn-primary" onclick="viewStudent(${s.id})">Voir détails</button>
+                                </td>
+                            </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('strugglingStudents').innerHTML = html;
+        }
+
+        function displayStudents(students) {
+            const html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Matricule</th>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Département</th>
+                            <th>Niveau</th>
+                            <th>Moyenne</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${students.map(s => {
+                            const avg = parseFloat(s.avg_score);
+                            const avgDisplay = !isNaN(avg) ? avg.toFixed(2) : 'N/A';
+                            const avgColor = avg >= 14 ? 'var(--success-color)' : avg >= 10 ? 'var(--warning-color)' : 'var(--danger-color)';
+                            
+                            return `
+                            <tr>
+                                <td>${s.student_id || 'N/A'}</td>
+                                <td>${s.last_name}</td>
+                                <td>${s.first_name}</td>
+                                <td>${s.department || 'N/A'}</td>
+                                <td>${s.level || 'N/A'}</td>
+                                <td><strong style="color: ${avgColor};">${avgDisplay}</strong></td>
+                                <td><button class="btn btn-primary" onclick="viewStudent(${s.id})">Voir détails</button></td>
+                            </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('studentsList').innerHTML = html;
+        }
+
+        async function viewStudent(studentId) {
+            // Afficher la modal
+            const modal = document.getElementById('studentModal');
+            modal.style.display = 'flex';
+            
+            // Afficher le loader
+            document.getElementById('modalContent').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Chargement des détails...</p>
+                </div>
+            `;
+            
+            try {
+                // Récupérer les détails de l'étudiant
+                const response = await authenticatedFetch(`http://localhost:5000/api/teacher/student/${studentId}/performance`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayStudentDetails(data);
+                } else {
+                    document.getElementById('modalContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            Erreur lors du chargement des détails
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                document.getElementById('modalContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        Erreur de connexion au serveur
+                    </div>
+                `;
+            }
+        }
+        
+        let currentGradesPage = 1;
+        const gradesPerPage = 5;
+        let currentGrades = [];
+        
+        function displayStudentDetails(data) {
+            const student = data.student;
+            currentGrades = data.grades || [];
+            const stats = data.statistics || {};
+            
+            const avgScore = parseFloat(stats.average_score);
+            const avgDisplay = !isNaN(avgScore) ? avgScore.toFixed(2) : 'N/A';
+            
+            currentGradesPage = 1;
+            
+            let html = `
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: var(--primary-color); margin-bottom: 15px;">👤 Informations personnelles</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><strong>Nom complet:</strong> ${student.first_name} ${student.last_name}</div>
+                        <div><strong>Matricule:</strong> ${student.student_id || 'N/A'}</div>
+                        <div><strong>Email:</strong> ${student.email || 'N/A'}</div>
+                        <div><strong>Département:</strong> ${student.department || 'N/A'}</div>
+                        <div><strong>Niveau:</strong> ${student.level || 'N/A'}</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: var(--primary-color); margin-bottom: 15px;">📊 Statistiques</h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                        <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);">${avgDisplay}</div>
+                            <div style="color: #6b7280;">Moyenne générale</div>
+                        </div>
+                        <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: var(--success-color);">${stats.total_grades || 0}</div>
+                            <div style="color: #6b7280;">Total notes</div>
+                        </div>
+                        <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: var(--warning-color);">${stats.subjects_count || 0}</div>
+                            <div style="color: #6b7280;">Matières</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            html += `<div id="gradesSection"></div>`;
+            
+            document.getElementById('modalContent').innerHTML = html;
+            displayGradesWithPagination();
+        }
+        
+        function displayGradesWithPagination() {
+            const totalPages = Math.ceil(currentGrades.length / gradesPerPage);
+            const startIndex = (currentGradesPage - 1) * gradesPerPage;
+            const endIndex = startIndex + gradesPerPage;
+            const paginated = currentGrades.slice(startIndex, endIndex);
+            
+            let html = '';
+            
+            if (currentGrades.length > 0) {
+                html += `
+                    <div>
+                        <h3 style="color: var(--primary-color); margin-bottom: 15px;">📝 Notes par matière (${currentGrades.length} notes)</h3>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Matière</th>
+                                    <th>Type</th>
+                                    <th>Note</th>
+                                    <th>Semestre</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${paginated.map(g => {
+                                    const score = parseFloat(g.score);
+                                    const scoreDisplay = !isNaN(score) ? score.toFixed(2) : 'N/A';
+                                    const scoreColor = score >= 10 ? 'var(--success-color)' : 'var(--danger-color)';
+                                    const date = g.created_at ? new Date(g.created_at).toLocaleDateString('fr-FR') : 'N/A';
+                                    
+                                    return `
+                                    <tr>
+                                        <td>${g.subject_name || 'N/A'}</td>
+                                        <td>${g.grade_type || 'N/A'}</td>
+                                        <td><strong style="color: ${scoreColor};">${scoreDisplay}/20</strong></td>
+                                        <td>${g.semester || 'N/A'}</td>
+                                        <td>${date}</td>
+                                    </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                `;
+                
+                // Pagination
+                if (totalPages > 1) {
+                    html += '<div style="margin-top: 15px; text-align: center;">';
+                    html += '<div style="display: flex; gap: 5px; justify-content: center; align-items: center; flex-wrap: wrap;">';
+                    
+                    if (currentGradesPage > 1) {
+                        html += `<button class="btn btn-secondary" onclick="changeGradesPage(${currentGradesPage - 1})">← Précédent</button>`;
+                    }
+                    
+                    for (let i = 1; i <= totalPages; i++) {
+                        if (i === currentGradesPage) {
+                            html += `<button class="btn btn-primary" style="min-width: 40px;">${i}</button>`;
+                        } else {
+                            html += `<button class="btn btn-secondary" style="min-width: 40px;" onclick="changeGradesPage(${i})">${i}</button>`;
+                        }
+                    }
+                    
+                    if (currentGradesPage < totalPages) {
+                        html += `<button class="btn btn-secondary" onclick="changeGradesPage(${currentGradesPage + 1})">Suivant →</button>`;
+                    }
+                    
+                    html += '</div>';
+                    html += `<p style="margin-top: 10px; color: #6b7280;">Page ${currentGradesPage} sur ${totalPages}</p>`;
+                    html += '</div>';
+                }
+                
+                html += `</div>`;
+            } else {
+                html += `
+                    <div class="alert alert-info">
+                        Aucune note enregistrée pour cet étudiant
+                    </div>
+                `;
+            }
+            
+            document.getElementById('gradesSection').innerHTML = html;
+        }
+        
+        function changeGradesPage(page) {
+            currentGradesPage = page;
+            displayGradesWithPagination();
+        }
+        
+        function closeStudentModal() {
+            document.getElementById('studentModal').style.display = 'none';
+        }
+        
+        // Fermer la modal en cliquant en dehors
+        document.getElementById('studentModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'studentModal') {
+                closeStudentModal();
+            }
+        });
+
+        // Charger au démarrage
+        loadDashboard();
+    </script>
+</body>
+</html>
