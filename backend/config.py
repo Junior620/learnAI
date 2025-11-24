@@ -1,6 +1,10 @@
 # Configuration de l'application ENSPD LearnAI
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis .env
+load_dotenv()
 
 class Config:
     """Configuration principale de l'application"""
