@@ -54,7 +54,7 @@ function switchTab(tabName) {
 async function loadUserProfile() {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/auth/profile', {
+        const response = await fetch('${API_URL}/auth/profile', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -97,7 +97,7 @@ async function loadUserProfile() {
 async function loadStudentProfile(userId) {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/students/${userId}/profile`, {
+        const response = await fetch(`${API_URL}/students/${userId}/profile`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -142,7 +142,7 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
     }
 
     try {
-        const response = await fetch('http://localhost:5000/api/auth/profile', {
+        const response = await fetch('${API_URL}/auth/profile', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ document.getElementById('passwordForm').addEventListener('submit', async (e) => 
     const token = localStorage.getItem('token');
 
     try {
-        const response = await fetch('http://localhost:5000/api/auth/change-password', {
+        const response = await fetch('${API_URL}/auth/change-password', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -271,7 +271,7 @@ async function deleteAccount() {
     const token = localStorage.getItem('token');
 
     try {
-        const response = await fetch('http://localhost:5000/api/auth/delete-account', {
+        const response = await fetch('${API_URL}/auth/delete-account', {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -305,3 +305,4 @@ function showAlert(message, type) {
         alertContainer.innerHTML = '';
     }, 5000);
 }
+

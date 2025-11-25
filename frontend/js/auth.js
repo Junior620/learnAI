@@ -1,5 +1,5 @@
 // Gestion de l'authentification
-const API_URL = 'http://localhost:5000/api';
+// L'API_URL est maintenant défini dans config.js
 
 // Fonction de connexion
 async function login(email, password) {
