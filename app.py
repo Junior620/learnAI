@@ -7,13 +7,11 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_path = os.path.join(current_dir, 'backend')
 sys.path.insert(0, backend_path)
 
-# Changer le répertoire de travail vers backend
-os.chdir(backend_path)
-
-# Importer l'application
+# Importer create_app depuis le module app du backend
 from app import create_app
 
+# Créer l'instance de l'application Flask
 app = create_app()
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0', port=8000)
