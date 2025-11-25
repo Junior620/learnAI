@@ -3,11 +3,15 @@ import sys
 import os
 
 # Ajouter le répertoire backend au Python path
-backend_path = os.path.join(os.path.dirname(__file__), 'backend')
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_path = os.path.join(current_dir, 'backend')
 sys.path.insert(0, backend_path)
 
-# Importer l'application depuis backend
-from backend.app import create_app
+# Changer le répertoire de travail vers backend
+os.chdir(backend_path)
+
+# Importer l'application
+from app import create_app
 
 app = create_app()
 
