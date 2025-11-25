@@ -1,4 +1,0 @@
-# Configuration Oryx pour Azure App Service
-[build]
-# Spécifier le répertoire de l'application
-appLocation = "backend"
