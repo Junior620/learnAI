@@ -6,7 +6,7 @@ services:
     plan: free
     branch: main
     buildCommand: "pip install -r requirements-light.txt"
-    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 600 --chdir backend app:app"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 600 wsgi:app"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
