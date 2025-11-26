@@ -28,8 +28,18 @@ def import_table_data(cursor, table_info):
             row_values = [row.get(col) for col in columns]
             rows_to_insert.append(tuple(row_values))
         
-        # Insérer les données
-        cursor.executemany(query, rows_to_insert)
+        # Insérer par batch de 1000 lignes pour plus de rapidité
+        batch_size = 1000
+        total_inserted = 0
+        
+        for i in range(0, len(rows_to_insert), batch_size):
+            batch = rows_to_insert[i:i + batch_size]
+            cursor.executemany(query, batch)
+            total_inserted += len(batch)
+            
+            # Afficher la progression
+            if total_inserted % 10000 == 0:
+                print(f"      {total_inserted:,} / {len(rows_to_insert):,} lignes...")
         
         return len(rows_to_insert)
         
@@ -93,10 +103,11 @@ def import_all_data(json_file='database_export.json'):
                 table_info = export_data['tables'][table_name]
                 count = import_table_data(cursor, table_info)
                 total_imported += count
-                print(f"   ✅ {count} lignes importées")
-        
-        # Commit des changements
-        conn.commit()
+                print(f"   ✅ {count:,} lignes importées")
+                
+                # Commit après chaque table pour sauvegarder la progression
+                conn.commit()
+                print(f"   💾 Sauvegardé")
         
         # Mettre à jour les séquences (pour les ID auto-incrémentés)
         print("\n🔄 Mise à jour des séquences...")

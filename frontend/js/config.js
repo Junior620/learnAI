@@ -8,12 +8,16 @@ const API_CONFIG = {
     
     // Détection automatique de l'environnement
     get BASE_URL() {
-        // Si on est sur localhost, utiliser l'URL de développement
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return this.DEVELOPMENT_URL;
-        }
-        // Sinon, utiliser l'URL de production
+        // TEMPORAIRE: Forcer l'URL de production pour tester
+        // Décommenter les lignes ci-dessous pour revenir au mode auto
         return this.PRODUCTION_URL;
+        
+        // Si on est sur localhost, utiliser l'URL de développement
+        // if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        //     return this.DEVELOPMENT_URL;
+        // }
+        // // Sinon, utiliser l'URL de production
+        // return this.PRODUCTION_URL;
     }
 };
 
