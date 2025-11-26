@@ -11,6 +11,7 @@ from routes.teacher_routes import teacher_bp
 from routes.chatbot_routes import chatbot_bp
 from routes.grades_routes import grades_bp
 from routes.settings import settings_bp
+from routes.admin_routes import admin_bp
 
 def create_app():
     """Factory pour créer l'application Flask"""
@@ -47,6 +48,7 @@ def create_app():
     app.register_blueprint(chatbot_bp)
     app.register_blueprint(grades_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(admin_bp)
     
     # Route de test
     @app.route('/')
