@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify
 from models.database import Database
 from ml.prediction_model import PredictionModel
 from ml.recommendation_engine import RecommendationEngine
-import jwt
+from flask_jwt_extended import decode_token
 from config import Config
 
 student_v2_bp = Blueprint('student_v2', __name__, url_prefix='/api/v2/student')
@@ -16,9 +16,10 @@ def verify_token():
     
     token = auth_header.split(' ')[1]
     try:
-        payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
+        payload = decode_token(token)
         return payload.get('sub')  # user_id
-    except:
+    except Exception as e:
+        print(f"Erreur vérification token: {e}")
         return None
 
 @student_v2_bp.route('/dashboard', methods=['GET'])
