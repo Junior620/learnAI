@@ -4,6 +4,7 @@ Script pour exporter les données de la base de données locale
 import psycopg2
 import json
 from datetime import datetime
+from decimal import Decimal
 
 # Configuration de ta base de données LOCALE
 LOCAL_DB_CONFIG = {
@@ -29,6 +30,8 @@ def export_table_data(cursor, table_name):
                 # Convertir les types non-JSON en string
                 if isinstance(value, datetime):
                     value = value.isoformat()
+                elif isinstance(value, Decimal):
+                    value = float(value)
                 elif isinstance(value, (list, dict)):
                     value = json.dumps(value)
                 row_dict[col] = value
