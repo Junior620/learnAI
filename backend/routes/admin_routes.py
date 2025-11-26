@@ -74,7 +74,11 @@ def test_token():
             token, 
             Config.JWT_SECRET_KEY, 
             algorithms=['HS256'],
-            options={"verify_exp": True}
+            options={
+                "verify_exp": True,
+                "verify_aud": False,
+                "verify_iss": False
+            }
         )
         return jsonify({
             "valid": True,

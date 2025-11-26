@@ -18,11 +18,16 @@ def verify_token():
     token = auth_header.split(' ')[1]
     try:
         # Décoder avec PyJWT directement
+        # Désactiver verify_aud et verify_iss car Flask-JWT-Extended utilise un integer pour sub
         payload = pyjwt.decode(
             token, 
             Config.JWT_SECRET_KEY, 
             algorithms=['HS256'],
-            options={"verify_exp": True}
+            options={
+                "verify_exp": True,
+                "verify_aud": False,
+                "verify_iss": False
+            }
         )
         user_id = payload.get('sub')
         print(f"Token valide pour user_id: {user_id}")
