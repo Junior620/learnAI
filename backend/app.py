@@ -7,6 +7,7 @@ from config import Config
 # Import des routes
 from routes.auth_routes import auth_bp
 from routes.student_routes import student_bp
+from routes.student_routes_v2 import student_v2_bp
 from routes.teacher_routes import teacher_bp
 from routes.chatbot_routes import chatbot_bp
 from routes.grades_routes import grades_bp
@@ -44,6 +45,7 @@ def create_app():
     # Enregistrement des blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
+    app.register_blueprint(student_v2_bp)  # Version sans JWT
     app.register_blueprint(teacher_bp)
     app.register_blueprint(chatbot_bp)
     app.register_blueprint(grades_bp)

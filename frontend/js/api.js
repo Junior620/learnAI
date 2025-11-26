@@ -3,19 +3,19 @@
 
 // Dashboard étudiant
 async function getStudentDashboard() {
-    const response = await authenticatedFetch(`${API_URL}/student/dashboard`);
+    const response = await authenticatedFetch(`${API_URL}/v2/student/dashboard`);
     return await response.json();
 }
 
 // Prédictions
 async function getPredictions() {
-    const response = await authenticatedFetch(`${API_URL}/student/predictions`);
+    const response = await authenticatedFetch(`${API_URL}/v2/student/predictions`);
     return await response.json();
 }
 
 // Recommandations
 async function getRecommendations() {
-    const response = await authenticatedFetch(`${API_URL}/student/recommendations`);
+    const response = await authenticatedFetch(`${API_URL}/v2/student/recommendations`);
     return await response.json();
 }
 
