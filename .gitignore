@@ -37,6 +37,8 @@ Thumbs.db
 # Database
 *.db
 *.sqlite
+database_export.json
+backend/database_export.json
 
 # Node (si utilisé)
 node_modules/

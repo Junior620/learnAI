@@ -16,6 +16,15 @@ def create_app():
     """Factory pour créer l'application Flask"""
     app = Flask(__name__)
     
+    # Initialiser la base de données au premier démarrage
+    try:
+        from init_db import check_database_exists, init_database
+        if not check_database_exists():
+            print("🔄 Première exécution - Initialisation de la base de données...")
+            init_database()
+    except Exception as e:
+        print(f"⚠️  Impossible d'initialiser la BD: {e}")
+    
     # Configuration
     app.config['SECRET_KEY'] = Config.SECRET_KEY
     app.config['JWT_SECRET_KEY'] = Config.JWT_SECRET_KEY
