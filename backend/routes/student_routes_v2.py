@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify
 from models.database import Database
 from ml.prediction_model import PredictionModel
 from ml.recommendation_engine import RecommendationEngine
-from flask_jwt_extended import decode_token
+import jwt as pyjwt
 from config import Config
 
 student_v2_bp = Blueprint('student_v2', __name__, url_prefix='/api/v2/student')
@@ -12,12 +12,27 @@ def verify_token():
     """Vérifier le token JWT manuellement"""
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith('Bearer '):
+        print("Pas de header Authorization")
         return None
     
     token = auth_header.split(' ')[1]
     try:
-        payload = decode_token(token)
-        return payload.get('sub')  # user_id
+        # Décoder avec PyJWT directement
+        payload = pyjwt.decode(
+            token, 
+            Config.JWT_SECRET_KEY, 
+            algorithms=['HS256'],
+            options={"verify_exp": True}
+        )
+        user_id = payload.get('sub')
+        print(f"Token valide pour user_id: {user_id}")
+        return user_id
+    except pyjwt.ExpiredSignatureError:
+        print("Token expiré")
+        return None
+    except pyjwt.InvalidTokenError as e:
+        print(f"Token invalide: {e}")
+        return None
     except Exception as e:
         print(f"Erreur vérification token: {e}")
         return None
