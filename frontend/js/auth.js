@@ -81,7 +81,7 @@ async function authenticatedFetch(url, options = {}) {
     
     if (!token) {
         window.location.href = 'index.html';
-        return;
+        throw new Error('No token');
     }
 
     const headers = {
@@ -94,13 +94,14 @@ async function authenticatedFetch(url, options = {}) {
         const response = await fetch(url, { ...options, headers });
         
         if (response.status === 401) {
+            console.error('Token invalide, déconnexion...');
             logout();
-            return;
+            throw new Error('Unauthorized');
         }
 
         return response;
     } catch (error) {
-        console.error('Erreur:', error);
+        console.error('Erreur authenticatedFetch:', error);
         throw error;
     }
 }
