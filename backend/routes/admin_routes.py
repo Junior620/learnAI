@@ -56,3 +56,43 @@ def test_jwt():
         "secret_key_configured": bool(Config.SECRET_KEY),
         "db_configured": bool(Config.DB_HOST and Config.DB_NAME)
     }), 200
+
+@admin_bp.route('/test-dashboard/<int:user_id>', methods=['GET'])
+def test_dashboard(user_id):
+    """Tester le dashboard sans JWT"""
+    try:
+        # Récupérer les notes
+        query_grades = """
+            SELECT g.*, s.name as subject_name, s.code as subject_code
+            FROM grades g
+            JOIN subjects s ON g.subject_id = s.id
+            WHERE g.student_id = %s
+            ORDER BY g.created_at DESC
+            LIMIT 10
+        """
+        grades = Database.execute_query(query_grades, (user_id,), fetch=True)
+        
+        # Calculer les statistiques
+        query_stats = """
+            SELECT 
+                AVG(score) as avg_score,
+                MIN(score) as min_score,
+                MAX(score) as max_score,
+                COUNT(*) as total_grades
+            FROM grades
+            WHERE student_id = %s
+        """
+        stats = Database.execute_query_one(query_stats, (user_id,))
+        
+        return jsonify({
+            "user_id": user_id,
+            "grades_count": len(list(grades)) if grades else 0,
+            "grades": [dict(g) for g in grades][:5] if grades else [],
+            "statistics": dict(stats) if stats else {}
+        }), 200
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
