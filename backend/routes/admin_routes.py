@@ -57,6 +57,37 @@ def test_jwt():
         "db_configured": bool(Config.DB_HOST and Config.DB_NAME)
     }), 200
 
+@admin_bp.route('/test-token', methods=['POST'])
+def test_token():
+    """Tester un token JWT"""
+    import jwt as pyjwt
+    from config import Config
+    
+    data = request.json
+    token = data.get('token')
+    
+    if not token:
+        return jsonify({"error": "Token requis"}), 400
+    
+    try:
+        payload = pyjwt.decode(
+            token, 
+            Config.JWT_SECRET_KEY, 
+            algorithms=['HS256'],
+            options={"verify_exp": True}
+        )
+        return jsonify({
+            "valid": True,
+            "payload": payload,
+            "user_id": payload.get('sub')
+        }), 200
+    except pyjwt.ExpiredSignatureError:
+        return jsonify({"valid": False, "error": "Token expiré"}), 200
+    except pyjwt.InvalidTokenError as e:
+        return jsonify({"valid": False, "error": f"Token invalide: {str(e)}"}), 200
+    except Exception as e:
+        return jsonify({"valid": False, "error": f"Erreur: {str(e)}"}), 200
+
 @admin_bp.route('/test-dashboard/<int:user_id>', methods=['GET'])
 def test_dashboard(user_id):
     """Tester le dashboard sans JWT"""
