@@ -140,9 +140,9 @@ class PredictionModel:
             else:
                 features_list.append(0.0)
         
-        # Ajouter un feature supplémentaire si le modèle en attend 12
-        if self.model.n_features_in_ == 12:
-            features_list.append(0.0)  # department_encoded ou autre
+        # Variables par défaut pour prédiction basique
+        prediction = 1  # Succès par défaut
+        probability = None
         
         # Si le modèle n'est pas disponible, utiliser une prédiction basée sur la moyenne
         if self.model is None or self.scaler is None:
@@ -150,6 +150,10 @@ class PredictionModel:
         else:
             # Utiliser le modèle ML si disponible
             try:
+                # Ajouter un feature supplémentaire si le modèle en attend 12
+                if hasattr(self.model, 'n_features_in_') and self.model.n_features_in_ == 12:
+                    features_list.append(0.0)  # department_encoded ou autre
+                
                 features = np.array([features_list])
                 features_scaled = self.scaler.transform(features)
                 prediction = self.model.predict(features_scaled)[0]
