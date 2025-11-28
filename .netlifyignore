@@ -1,0 +1,11 @@
+backend/
+requirements.txt
+requirements-light.txt
+*.py
+.venv/
+__pycache__/
+*.pyc
+.env
+database/
+tests/
+ml/
