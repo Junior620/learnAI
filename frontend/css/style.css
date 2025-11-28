@@ -1,15 +1,20 @@
 /* ENSPD LearnAI - Styles globaux */
 :root {
-    --primary-color: #2563eb;
-    --secondary-color: #1e40af;
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --dark-color: #1f2937;
-    --light-color: #f3f4f6;
+    /* Palette épurée et professionnelle */
+    --primary-color: #0f766e;        /* Teal foncé élégant */
+    --secondary-color: #0d9488;      /* Teal moyen */
+    --accent-color: #14b8a6;         /* Teal clair pour accents */
+    --success-color: #059669;        /* Vert émeraude */
+    --warning-color: #d97706;        /* Ambre profond */
+    --danger-color: #dc2626;         /* Rouge sobre */
+    --dark-color: #0f172a;           /* Slate très foncé */
+    --medium-color: #475569;         /* Slate moyen */
+    --light-color: #f8fafc;          /* Blanc cassé */
     --white: #ffffff;
-    --border-radius: 8px;
-    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --border-color: #e2e8f0;         /* Bordures subtiles */
+    --border-radius: 12px;
+    --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
 * {
@@ -19,8 +24,8 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #0f766e 0%, #14b8a6 50%, #0d9488 100%);
     min-height: 100vh;
     color: var(--dark-color);
 }
@@ -150,7 +155,8 @@ body {
     color: var(--white);
     padding: 25px;
     border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
+    box-shadow: var(--box-shadow-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-card h3 {
