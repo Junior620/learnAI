@@ -1,7 +1,7 @@
 [build]
   publish = "frontend"
   command = "echo 'Frontend statique - pas de build'"
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF backend/"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF frontend/"
 
 [[redirects]]
   from = "/*"
@@ -10,3 +10,5 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  # Désactiver Python pour éviter l'installation de requirements.txt
+  PYTHON_VERSION = ""
