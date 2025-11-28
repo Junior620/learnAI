@@ -27,16 +27,9 @@ def create_app():
     except Exception as e:
         print(f"⚠️  Impossible d'initialiser la BD: {e}")
     
-    # Entraîner le modèle ML si nécessaire
-    try:
-        from ml.prediction_model import PredictionModel
-        import os
-        model = PredictionModel()
-        if not os.path.exists(model.model_path):
-            print("🤖 Entraînement du modèle ML au démarrage...")
-            model.train_model()
-    except Exception as e:
-        print(f"⚠️  Modèle ML non disponible: {e}")
+    # Ne pas entraîner le modèle ML au démarrage (trop de RAM)
+    # Le système utilisera des prédictions basées sur les moyennes
+    print("ℹ️  Utilisation de prédictions basiques (modèle ML désactivé pour économiser la RAM)")
     
     # Configuration
     app.config['SECRET_KEY'] = Config.SECRET_KEY
