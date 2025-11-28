@@ -91,9 +91,9 @@ class PredictionModel:
     
     def predict_success(self, student_id):
         """Prédit la probabilité de réussite d'un étudiant"""
+        # Essayer de charger le modèle, mais continuer même s'il n'existe pas
         if self.model is None:
-            if not self.load_model():
-                return None
+            self.load_model()  # Tenter de charger, mais ne pas échouer si absent
         
         # Préparer les données complètes de l'étudiant (avec moyennes par matière)
         from models.database import Database
@@ -144,16 +144,20 @@ class PredictionModel:
         if self.model.n_features_in_ == 12:
             features_list.append(0.0)  # department_encoded ou autre
         
-        features = np.array([features_list])
+        # Si le modèle n'est pas disponible, utiliser une prédiction basée sur la moyenne
+        if self.model is None or self.scaler is None:
+            print("⚠️ Modèle ML non disponible - Utilisation de prédiction basique")
+        else:
+            # Utiliser le modèle ML si disponible
+            try:
+                features = np.array([features_list])
+                features_scaled = self.scaler.transform(features)
+                prediction = self.model.predict(features_scaled)[0]
+                probability = self.model.predict_proba(features_scaled)[0]
+            except Exception as e:
+                print(f"⚠️ Erreur ML: {e} - Utilisation de prédiction basique")
         
-        # Normaliser
-        features_scaled = self.scaler.transform(features)
-        
-        # Prédire
-        prediction = self.model.predict(features_scaled)[0]
-        probability = self.model.predict_proba(features_scaled)[0]
-        
-        # Ajuster la probabilité en fonction de la moyenne réelle
+        # Calculer une probabilité basée sur la moyenne réelle
         avg = float(stats['avg_score'])
         
         # Calculer une probabilité plus réaliste basée sur la moyenne
