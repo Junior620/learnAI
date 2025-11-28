@@ -16,8 +16,8 @@ class GroqService:
             print(f"❌ Erreur initialisation Groq: {e}")
             self.client = None
     
-    def generate_chatbot_response(self, user_message, context=None, conversation_history=None):
-        """Génère une réponse du chatbot éducatif avec historique conversationnel"""
+    def generate_chatbot_response(self, user_message, context=None, conversation_history=None, student_data=None):
+        """Génère une réponse du chatbot éducatif avec historique conversationnel et données complètes"""
         if self.client is None:
             return None
         
@@ -31,6 +31,7 @@ class GroqService:
         - Motiver et encourager les étudiants
         - Répondre en français de manière claire et pédagogique
         - Te souvenir du contexte de la conversation pour des réponses cohérentes
+        - Accéder aux données RÉELLES de l'étudiant pour des réponses précises
         
         Domaines d'expertise:
         - Mathématiques, Physique, Informatique, Génie
@@ -38,16 +39,27 @@ class GroqService:
         - Gestion du temps et organisation
         - Préparation aux examens
         
+        IMPORTANT - Utilisation des données:
+        - Tu as accès aux notes RÉELLES de l'étudiant dans le contexte
+        - Ne suppose JAMAIS, utilise UNIQUEMENT les données fournies
+        - Si l'étudiant demande ses notes, utilise les données du contexte
+        - Présente les notes sous forme de tableau Markdown quand approprié
+        - Si une donnée n'est pas disponible, dis-le clairement
+        
         IMPORTANT - Format de réponse Markdown:
         - Utilise **gras** pour les points importants
+        - Utilise des tableaux Markdown pour présenter les notes:
+          | Matière | Note | Coefficient |
+          |---------|------|-------------|
+          | Math    | 15   | 3           |
         - Utilise des listes à puces (- ou *) pour énumérer
         - Utilise des listes numérotées (1. 2. 3.) pour les étapes
-        - Utilise `code` pour les formules mathématiques ou code
-        - Utilise des emojis pertinents (📚 💡 ✅ 🎯 etc.) pour rendre la réponse engageante
+        - Utilise `code` pour les formules mathématiques
+        - Utilise des emojis pertinents (📚 💡 ✅ 🎯 📊 etc.)
         - Structure tes réponses avec des paragraphes clairs
         
         Sois toujours positif, encourageant et précis dans tes réponses.
-        Limite tes réponses à 300 mots maximum pour rester concis."""
+        Limite tes réponses à 350 mots maximum pour rester concis."""
         
         # Construire les messages avec historique
         messages = [{"role": "system", "content": system_prompt}]
@@ -55,7 +67,7 @@ class GroqService:
         if context:
             messages.append({
                 "role": "system",
-                "content": f"Contexte de l'étudiant: {context}"
+                "content": f"DONNÉES RÉELLES DE L'ÉTUDIANT (à utiliser pour répondre avec précision):\n\n{context}"
             })
         
         # Ajouter l'historique de conversation (5 derniers échanges)

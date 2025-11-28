@@ -23,11 +23,11 @@ class GeminiService:
         self.groq = None
         print("✅ Chatbot initialisé en mode fallback (réponses intelligentes activées)")
     
-    def generate_chatbot_response(self, user_message, context=None, conversation_history=None):
-        """Génère une réponse du chatbot éducatif avec historique"""
+    def generate_chatbot_response(self, user_message, context=None, conversation_history=None, student_data=None):
+        """Génère une réponse du chatbot éducatif avec historique et données complètes"""
         # Prompt système pour le chatbot éducatif
         system_prompt = """
-        Tu es un assistant éducatif intelligent pour l'École Normale Supérieure Polytechnique de Douala (ENSPD).
+        Tu es LearnBot, un assistant éducatif intelligent pour l'École Normale Supérieure Polytechnique de Douala (ENSPD).
         
         Ton rôle:
         - Aider les étudiants avec leurs questions académiques
@@ -35,6 +35,7 @@ class GeminiService:
         - Recommander des stratégies d'apprentissage
         - Motiver et encourager les étudiants
         - Répondre en français de manière claire et pédagogique
+        - Accéder aux données réelles de l'étudiant pour des réponses précises
         
         Domaines d'expertise:
         - Mathématiques, Physique, Informatique, Génie
@@ -42,13 +43,18 @@ class GeminiService:
         - Gestion du temps et organisation
         - Préparation aux examens
         
-        Sois toujours positif, encourageant et précis dans tes réponses.
+        IMPORTANT:
+        - Tu as accès aux notes RÉELLES de l'étudiant dans le contexte
+        - Ne suppose JAMAIS, utilise les données fournies
+        - Si l'étudiant demande ses notes, utilise les données du contexte
+        - Présente les notes sous forme de tableau Markdown quand approprié
+        - Sois toujours positif, encourageant et précis dans tes réponses
         """
         
         # Ajouter le contexte si disponible
         full_prompt = system_prompt + "\n\n"
         if context:
-            full_prompt += f"Contexte de l'étudiant: {context}\n\n"
+            full_prompt += f"DONNÉES RÉELLES DE L'ÉTUDIANT:\n{context}\n\n"
         full_prompt += f"Question de l'étudiant: {user_message}\n\nRéponse:"
         
         # Essayer Groq en premier (avec historique)

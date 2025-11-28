@@ -6,6 +6,61 @@ from models.database import Database
 
 chatbot_bp = Blueprint('chatbot', __name__, url_prefix='/api/chatbot')
 
+def get_student_detailed_data(user_id):
+    """Récupère toutes les données détaillées de l'étudiant"""
+    # Informations de base
+    base_query = """
+        SELECT 
+            u.first_name,
+            u.last_name,
+            u.email,
+            sp.department,
+            sp.level,
+            sp.student_id,
+            AVG(g.score) as avg_score
+        FROM users u
+        LEFT JOIN student_profiles sp ON u.id = sp.user_id
+        LEFT JOIN grades g ON u.id = g.student_id
+        WHERE u.id = %s
+        GROUP BY u.first_name, u.last_name, u.email, sp.department, sp.level, sp.student_id
+    """
+    base_data = Database.execute_query_one(base_query, (user_id,))
+    
+    # Notes par matière
+    grades_query = """
+        SELECT 
+            s.name as subject_name,
+            g.score,
+            g.coefficient,
+            g.exam_date,
+            g.exam_type
+        FROM grades g
+        JOIN subjects s ON g.subject_id = s.id
+        WHERE g.student_id = %s
+        ORDER BY g.exam_date DESC
+    """
+    grades_data = Database.execute_query(grades_query, (user_id,), fetch=True)
+    
+    # Moyennes par matière
+    subject_avg_query = """
+        SELECT 
+            s.name as subject_name,
+            AVG(g.score) as avg_score,
+            COUNT(*) as num_grades
+        FROM grades g
+        JOIN subjects s ON g.subject_id = s.id
+        WHERE g.student_id = %s
+        GROUP BY s.name
+        ORDER BY avg_score DESC
+    """
+    subject_avgs = Database.execute_query(subject_avg_query, (user_id,), fetch=True)
+    
+    return {
+        'base': base_data,
+        'grades': list(grades_data) if grades_data else [],
+        'subject_averages': list(subject_avgs) if subject_avgs else []
+    }
+
 @chatbot_bp.route('/message', methods=['POST'])
 @jwt_required()
 def send_message():
@@ -19,34 +74,50 @@ def send_message():
     user_message = data['message']
     
     try:
-        # Récupérer le contexte de l'étudiant
-        query = """
-            SELECT 
-                u.first_name,
-                sp.department,
-                sp.level,
-                AVG(g.score) as avg_score
-            FROM users u
-            LEFT JOIN student_profiles sp ON u.id = sp.user_id
-            LEFT JOIN grades g ON u.id = g.student_id
-            WHERE u.id = %s
-            GROUP BY u.first_name, sp.department, sp.level
-        """
-        context_data = Database.execute_query_one(query, (user_id,))
+        # Récupérer les données détaillées de l'étudiant
+        student_data = get_student_detailed_data(user_id)
         
+        # Construire un contexte enrichi
         context = None
         context_json = None
-        if context_data:
-            avg_score = context_data.get('avg_score')
+        
+        if student_data['base']:
+            base = student_data['base']
+            avg_score = base.get('avg_score')
             avg_str = f"{float(avg_score):.2f}" if avg_score else "N/A"
-            context = f"Étudiant: {context_data['first_name']}, Département: {context_data.get('department', 'N/A')}, Niveau: {context_data.get('level', 'N/A')}, Moyenne: {avg_str}"
             
-            # Créer un objet JSON pour la base de données
+            # Contexte textuel pour l'IA
+            context_parts = [
+                f"Étudiant: {base['first_name']} {base['last_name']}",
+                f"Matricule: {base.get('student_id', 'N/A')}",
+                f"Département: {base.get('department', 'N/A')}",
+                f"Niveau: {base.get('level', 'N/A')}",
+                f"Moyenne générale: {avg_str}/20"
+            ]
+            
+            # Ajouter les moyennes par matière
+            if student_data['subject_averages']:
+                context_parts.append("\nMoyennes par matière:")
+                for subj in student_data['subject_averages']:
+                    context_parts.append(f"- {subj['subject_name']}: {float(subj['avg_score']):.2f}/20 ({subj['num_grades']} notes)")
+            
+            # Ajouter les dernières notes
+            if student_data['grades']:
+                context_parts.append("\nDernières notes:")
+                for grade in student_data['grades'][:5]:  # 5 dernières notes
+                    context_parts.append(f"- {grade['subject_name']}: {grade['score']}/20 (coef {grade['coefficient']})")
+            
+            context = "\n".join(context_parts)
+            
+            # JSON pour la base de données
             context_json = {
-                "first_name": context_data['first_name'],
-                "department": context_data.get('department'),
-                "level": context_data.get('level'),
-                "avg_score": avg_str
+                "first_name": base['first_name'],
+                "last_name": base['last_name'],
+                "department": base.get('department'),
+                "level": base.get('level'),
+                "avg_score": avg_str,
+                "subject_count": len(student_data['subject_averages']),
+                "total_grades": len(student_data['grades'])
             }
         
         # Récupérer l'historique récent (5 derniers messages)
@@ -72,9 +143,9 @@ def send_message():
                     "content": h['response']
                 })
         
-        # Générer la réponse avec Gemini (avec historique)
+        # Générer la réponse avec Gemini (avec historique et données complètes)
         gemini = GeminiService()
-        response = gemini.generate_chatbot_response(user_message, context, conversation_history)
+        response = gemini.generate_chatbot_response(user_message, context, conversation_history, student_data)
         
         # Sauvegarder la conversation
         try:
