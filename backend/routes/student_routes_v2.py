@@ -3,46 +3,18 @@ from flask import Blueprint, request, jsonify
 from models.database import Database
 from ml.prediction_model import PredictionModel
 from ml.recommendation_engine import RecommendationEngine
-import jwt as pyjwt
+from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 from config import Config
 
 student_v2_bp = Blueprint('student_v2', __name__, url_prefix='/api/v2/student')
 
 def verify_token():
-    """Vérifier le token JWT manuellement"""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        print("Pas de header Authorization")
-        return None
-    
-    token = auth_header.split(' ')[1]
+    """Vérifier le token JWT avec Flask-JWT-Extended"""
     try:
-        # Décoder avec PyJWT directement
-        # Désactiver toutes les vérifications sauf la signature et l'expiration
-        payload = pyjwt.decode(
-            token, 
-            Config.JWT_SECRET_KEY, 
-            algorithms=['HS256'],
-            options={
-                "verify_signature": True,
-                "verify_exp": True,
-                "verify_nbf": True,
-                "verify_iat": True,
-                "verify_aud": False,
-                "require_exp": False,
-                "require_iat": False,
-                "require_nbf": False
-            }
-        )
-        user_id = payload.get('sub')
+        verify_jwt_in_request()
+        user_id = get_jwt_identity()
         print(f"Token valide pour user_id: {user_id}")
         return user_id
-    except pyjwt.ExpiredSignatureError:
-        print("Token expiré")
-        return None
-    except pyjwt.InvalidTokenError as e:
-        print(f"Token invalide: {e}")
-        return None
     except Exception as e:
         print(f"Erreur vérification token: {e}")
         return None
