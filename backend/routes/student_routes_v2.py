@@ -81,8 +81,10 @@ def get_predictions():
         
         return jsonify(prediction), 200
     except Exception as e:
-        print(f"Erreur prédiction: {e}")
-        return jsonify({"message": "Erreur lors de la prédiction"}), 200
+        print(f"Erreur prédiction pour user {user_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": "Erreur lors de la prédiction", "error": str(e)}), 200
 
 @student_v2_bp.route('/recommendations', methods=['GET'])
 def get_recommendations():
