@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ENSPD LearnAI - Chatbot Éducatif</title>
+    <title>ENSPD LearnAI - LearnBot Assistant</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- Marked.js pour le rendu Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         .chat-container {
             max-width: 900px;
@@ -42,15 +44,65 @@
             max-width: 70%;
             padding: 12px 16px;
             border-radius: 12px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
         .message.bot .message-content {
             background: white;
             border: 1px solid #e5e7eb;
         }
+        .message.bot .message-content p {
+            margin: 0.5em 0;
+        }
+        .message.bot .message-content ul, 
+        .message.bot .message-content ol {
+            margin: 0.5em 0;
+            padding-left: 1.5em;
+        }
+        .message.bot .message-content code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .message.bot .message-content pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 0.5em 0;
+        }
+        .message.bot .message-content pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        .message.bot .message-content strong {
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .message.bot .message-content h1,
+        .message.bot .message-content h2,
+        .message.bot .message-content h3 {
+            margin: 0.8em 0 0.4em 0;
+            font-weight: 600;
+        }
         .message.user .message-content {
             background: #2563eb;
             color: white;
+        }
+        .bot-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 18px;
+            flex-shrink: 0;
         }
         .chat-input-container {
             padding: 20px;
@@ -100,14 +152,24 @@
 
         <div class="chat-box">
             <div class="chat-header">
-                <h2>🤖 Assistant Éducatif IA</h2>
+                <h2>🤖 LearnBot - Votre Assistant Éducatif</h2>
                 <p>Posez vos questions académiques, je suis là pour vous aider !</p>
             </div>
 
             <div class="chat-messages" id="chatMessages">
                 <div class="message bot">
+                    <div class="bot-avatar">🤖</div>
                     <div class="message-content">
-                        Bonjour ! Je suis votre assistant éducatif intelligent. Comment puis-je vous aider aujourd'hui ?
+                        <strong>Bonjour ! Je suis LearnBot</strong>, votre assistant éducatif intelligent. 
+                        <br><br>
+                        Je peux vous aider avec :
+                        <ul>
+                            <li>📚 Explications de cours</li>
+                            <li>💡 Conseils d'étude</li>
+                            <li>📊 Analyse de vos performances</li>
+                            <li>🎯 Recommandations personnalisées</li>
+                        </ul>
+                        Comment puis-je vous aider aujourd'hui ?
                     </div>
                 </div>
             </div>
@@ -183,9 +245,23 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}`;
             
+            // Ajouter l'avatar pour le bot
+            if (sender === 'bot') {
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'bot-avatar';
+                avatarDiv.textContent = '🤖';
+                messageDiv.appendChild(avatarDiv);
+            }
+            
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
-            contentDiv.textContent = text;
+            
+            // Pour le bot, convertir le Markdown en HTML
+            if (sender === 'bot' && typeof marked !== 'undefined') {
+                contentDiv.innerHTML = marked.parse(text);
+            } else {
+                contentDiv.textContent = text;
+            }
             
             messageDiv.appendChild(contentDiv);
             chatMessages.appendChild(messageDiv);
@@ -225,8 +301,18 @@
                 // Effacer l'affichage
                 chatMessages.innerHTML = `
                     <div class="message bot">
+                        <div class="bot-avatar">🤖</div>
                         <div class="message-content">
-                            Bonjour ! Je suis votre assistant éducatif intelligent. Comment puis-je vous aider aujourd'hui ?
+                            <strong>Bonjour ! Je suis LearnBot</strong>, votre assistant éducatif intelligent. 
+                            <br><br>
+                            Je peux vous aider avec :
+                            <ul>
+                                <li>📚 Explications de cours</li>
+                                <li>💡 Conseils d'étude</li>
+                                <li>📊 Analyse de vos performances</li>
+                                <li>🎯 Recommandations personnalisées</li>
+                            </ul>
+                            Comment puis-je vous aider aujourd'hui ?
                         </div>
                     </div>
                 `;
