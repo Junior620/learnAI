@@ -27,6 +27,17 @@ def create_app():
     except Exception as e:
         print(f"⚠️  Impossible d'initialiser la BD: {e}")
     
+    # Entraîner le modèle ML si nécessaire
+    try:
+        from ml.prediction_model import PredictionModel
+        import os
+        model = PredictionModel()
+        if not os.path.exists(model.model_path):
+            print("🤖 Entraînement du modèle ML au démarrage...")
+            model.train_model()
+    except Exception as e:
+        print(f"⚠️  Modèle ML non disponible: {e}")
+    
     # Configuration
     app.config['SECRET_KEY'] = Config.SECRET_KEY
     app.config['JWT_SECRET_KEY'] = Config.JWT_SECRET_KEY
