@@ -9,6 +9,9 @@
   status = 200
 
 [build.environment]
-  NODE_VERSION = "18"
-  # Désactiver Python pour éviter l'installation de requirements.txt
+  # Désactiver complètement Python
   PYTHON_VERSION = ""
+  PIPENV_VENV_IN_PROJECT = "false"
+  
+[build.processing]
+  skip_processing = true

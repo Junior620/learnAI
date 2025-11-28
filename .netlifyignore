@@ -1,6 +1,5 @@
 backend/
-requirements.txt
-requirements-light.txt
+requirements*.txt
 *.py
 .venv/
 __pycache__/
@@ -9,3 +8,5 @@ __pycache__/
 database/
 tests/
 ml/
+*.md
+!frontend/**
