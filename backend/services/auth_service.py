@@ -28,8 +28,8 @@ class AuthService:
                 student_data.get('academic_year')
             )
         
-        # Générer le token JWT
-        access_token = create_access_token(identity=user['id'])
+        # Générer le token JWT (convertir ID en string pour compatibilité PyJWT)
+        access_token = create_access_token(identity=str(user['id']))
         
         return {
             "message": "Utilisateur créé avec succès",
@@ -49,8 +49,8 @@ class AuthService:
         if not User.verify_password(password, user['password_hash']):
             return {"error": "Email ou mot de passe incorrect"}, 401
         
-        # Générer le token JWT
-        access_token = create_access_token(identity=user['id'])
+        # Générer le token JWT (convertir ID en string pour compatibilité PyJWT)
+        access_token = create_access_token(identity=str(user['id']))
         
         # Retirer le hash du mot de passe
         user.pop('password_hash', None)

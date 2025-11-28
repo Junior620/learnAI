@@ -13,6 +13,9 @@ def verify_token():
     try:
         verify_jwt_in_request()
         user_id = get_jwt_identity()
+        # Convertir en integer si c'est une string
+        if isinstance(user_id, str):
+            user_id = int(user_id)
         print(f"Token valide pour user_id: {user_id}")
         return user_id
     except Exception as e:
