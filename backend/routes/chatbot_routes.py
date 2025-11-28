@@ -31,13 +31,14 @@ def get_student_detailed_data(user_id):
         SELECT 
             s.name as subject_name,
             g.score,
-            g.coefficient,
-            g.exam_date,
-            g.exam_type
+            g.grade_type,
+            g.semester,
+            g.academic_year,
+            g.created_at
         FROM grades g
         JOIN subjects s ON g.subject_id = s.id
         WHERE g.student_id = %s
-        ORDER BY g.exam_date DESC
+        ORDER BY g.created_at DESC
     """
     grades_data = Database.execute_query(grades_query, (user_id,), fetch=True)
     
@@ -105,7 +106,7 @@ def send_message():
             if student_data['grades']:
                 context_parts.append("\nDernières notes:")
                 for grade in student_data['grades'][:5]:  # 5 dernières notes
-                    context_parts.append(f"- {grade['subject_name']}: {grade['score']}/20 (coef {grade['coefficient']})")
+                    context_parts.append(f"- {grade['subject_name']}: {grade['score']}/20 ({grade['grade_type']}, {grade['semester']})")
             
             context = "\n".join(context_parts)
             

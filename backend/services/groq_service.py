@@ -49,9 +49,9 @@ class GroqService:
         IMPORTANT - Format de réponse Markdown:
         - Utilise **gras** pour les points importants
         - Utilise des tableaux Markdown pour présenter les notes:
-          | Matière | Note | Coefficient |
-          |---------|------|-------------|
-          | Math    | 15   | 3           |
+          | Matière | Note | Type | Semestre |
+          |---------|------|------|----------|
+          | Math    | 15   | CC   | S1       |
         - Utilise des listes à puces (- ou *) pour énumérer
         - Utilise des listes numérotées (1. 2. 3.) pour les étapes
         - Utilise `code` pour les formules mathématiques
