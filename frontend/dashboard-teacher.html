@@ -129,7 +129,7 @@
 
         async function loadStudents() {
             try {
-                const response = await authenticatedFetch('${API_URL}/teacher/students');
+                const response = await authenticatedFetch(`${API_URL}/teacher/students`);
                 const data = await response.json();
                 
                 if (response.ok && data.students) {
